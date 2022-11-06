@@ -4,3 +4,9 @@
     right: 30px;
     width: 300px;
 }
+
+.pretzel-img {
+    height: 300px;
+    width: auto;
+    aspect-ratio: auto;
+}
