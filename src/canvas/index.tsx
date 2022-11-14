@@ -1,16 +1,13 @@
-import { NormalizedLandmark, Pose, POSE_CONNECTIONS, ResultsListener } from "@mediapipe/pose";
-
+import type { NormalizedLandmark, Pose, POSE_CONNECTIONS, ResultsListener } from "@mediapipe/pose";
 import { Component, createSignal, Match, onMount, Show, Switch } from "solid-js";
-import { Camera } from '@mediapipe/camera_utils';
+import type { Camera } from '@mediapipe/camera_utils';
 import '@mediapipe/control_utils';
 import { LandmarkGrid } from '@mediapipe/control_utils_3d';
-import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
+import type { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
 import styles from './canvas.module.css';
 import { vec3 } from 'munum';
 import Card from "../components/Card";
 import Skeleton from "../components/Skeleton";
-import Button from "../components/Button";
-import Select from "../components/Select";
 import RangeInput from "../components/RangeInput";
 import { mean } from "simple-statistics";
 
@@ -51,7 +48,7 @@ function calculateReferencePoint(hipPoint: NormalizedLandmark, shoulderPoint: No
 
 const Canvas: Component = () => {
 
-    const [ready, setReady] = createSignal(true);
+    const [ready, setReady] = createSignal(false);
     const [currentDistance, setCurrentDistance] = createSignal(0);
     const [pretzel, setPretzelStatus] = createSignal(true);
     const [threshold, setThreshold] = createSignal(OPTIMAL_DISTANCE);
@@ -143,8 +140,10 @@ const Canvas: Component = () => {
 
 
 
+            // @ts-ignore
             drawConnectors(canvasCtx, modifiedLandmarks, modifiedConnections,
                 { color: '#00FF00', lineWidth: 4 });
+            // @ts-ignore
             drawLandmarks(canvasCtx, results.poseLandmarks,
                 { color: '#FF0000', lineWidth: 2 });
             canvasCtx.restore();
@@ -166,33 +165,36 @@ const Canvas: Component = () => {
             setCurrentDistance(distFromRef)
         }
 
-        pose = new Pose({
-            locateFile: (file) => {
-                return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
-            }
-        });
-        pose.setOptions({
-            modelComplexity: 1,
-            smoothLandmarks: true,
-            minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5
-        });
+        setTimeout(() => {
+            // @ts-ignore
+            pose = new Pose({
+                locateFile: (file: any) => {
+                    return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+                }
+            });
+            pose.setOptions({
+                modelComplexity: 1,
+                smoothLandmarks: true,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
 
 
 
-        pose.onResults(onResults);
+            pose.onResults(onResults);
 
-        camera = new Camera(videoElement, {
-            onFrame: async () => {
-                await pose.send({ image: videoElement });
-            },
-            width: 1280,
-            height: 720,
+            // @ts-ignore
+            camera = new Camera(videoElement, {
+                onFrame: async () => {
+                    await pose.send({ image: videoElement });
+                },
+                width: 1280,
+                height: 720,
 
-        });
+            });
 
-        camera.start();
-
+            camera.start();
+        }, 1000);
     })
 
     return <div class="flex justify-center">
@@ -205,11 +207,7 @@ const Canvas: Component = () => {
                 <div class="sm:w-full lg:max-w-3xl">
                     <Card>
                         <div class="mb-4 flex justify-center align-middle">
-                            <Switch fallback={<Skeleton type="image" />}>
-                                <Match when={ready()}>
-                                    <canvas class="output_canvas" width="640px" height="360px"></canvas>
-                                </Match>
-                            </Switch>
+                            <canvas class="output_canvas" width="640px" height="360px"></canvas>
                         </div>
 
                         <div
@@ -235,9 +233,9 @@ const Canvas: Component = () => {
                         </div>
                     </Card>
                 </div>
-                <Card>
-                    <div class="container max-h-100 flex flex-col items-center">
-                        <Show when={ready()}>
+                <Show when={ready()}>
+                    <Card>
+                        <div class="container max-h-100 flex flex-col items-center">
                             <h1 class="mb-4 text-3xl font-extrabold text-gray-900 dark:text-white md:text-5xl lg:text-6xl">
                                 Are you a pretzel?
                             </h1>
@@ -249,9 +247,9 @@ const Canvas: Component = () => {
                             <Show when={pretzel()}>
                                 <img class={`${styles['pretzel-img']}`} src="https://media.newyorker.com/photos/60521c4b9274613edb14f271/1:1/w_1865,h_1865,c_limit/210329_r38112.jpg" />
                             </Show>
-                        </Show>
-                    </div>
-                </Card>
+                        </div>
+                    </Card>
+                </Show>
             </div>
             <video class={`input_video ${styles.webcam}`}></video>
             <div class="landmark-grid-container"></div>
