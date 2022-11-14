@@ -10,6 +10,7 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@types/math3d": "^0.2.3",
     "autoprefixer": "^10.4.12",
     "postcss": "^8.4.18",
     "prettier": "2.7.1",
@@ -25,6 +26,9 @@
     "@mediapipe/drawing_utils": "^0.3.1620248257",
     "@mediapipe/pose": "^0.5.1635988162",
     "flowbite": "^1.5.3",
+    "math3d": "^0.2.2",
+    "munum": "^0.1.0",
+    "simple-statistics": "^7.8.0",
     "solid-js": "^1.5.1"
   }
 }

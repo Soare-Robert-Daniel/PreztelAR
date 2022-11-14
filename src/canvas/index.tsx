@@ -6,11 +6,13 @@ import '@mediapipe/control_utils';
 import { LandmarkGrid } from '@mediapipe/control_utils_3d';
 import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
 import styles from './canvas.module.css';
-import { Vector } from "./vector";
+import { vec3 } from 'munum';
 import Card from "../components/Card";
 import Skeleton from "../components/Skeleton";
 import Button from "../components/Button";
 import Select from "../components/Select";
+import RangeInput from "../components/RangeInput";
+import { mean } from "simple-statistics";
 
 const points = {
     leftEar: 7,
@@ -25,40 +27,41 @@ const points = {
     referencePoint: 33
 }
 
+const NECK_EXTENSION_LENGTH = 0.5;
+const OPTIMAL_DISTANCE = 0.14;
+const FRAME_THRESHOLD = 30;
+
 function distance(a: NormalizedLandmark, b: NormalizedLandmark): number {
-    const dist = Math.sqrt((a.x - b.x) * (a.x - b.x) - (a.y - b.y) * (a.y - b.y));
+    const dist = Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)) //+ (a.z - b.z) * (a.z - b.z));
     return Number.isNaN(dist) ? 0 : dist;
 }
 
 function calculateReferencePoint(hipPoint: NormalizedLandmark, shoulderPoint: NormalizedLandmark, neckExtension: number): NormalizedLandmark {
-    const neckReference = new Vector(shoulderPoint.x - hipPoint.x, shoulderPoint.y - hipPoint.y).normalize().multiply(neckExtension);
+    const neckReference = vec3.scale(vec3.norm(vec3.create(shoulderPoint.x - hipPoint.x, shoulderPoint.y - hipPoint.y, shoulderPoint.z - shoulderPoint.z)), neckExtension);
 
     const referencePoint = {
-        x: shoulderPoint.x + neckReference.x,
-        y: shoulderPoint.y + neckReference.y,
-        z: shoulderPoint.z
+        x: shoulderPoint.x + neckReference[0],
+        y: shoulderPoint.y + neckReference[1],
+        z: shoulderPoint.z + neckReference[2]
     }
 
     return referencePoint;
 }
 
-function distanceBetweenEarsAndReferencePoint(leftEar: NormalizedLandmark, rightEar: NormalizedLandmark, referencePoint: NormalizedLandmark) {
-    const leftEarD = distance(leftEar, referencePoint);
-    const rightEarD = distance(rightEar, referencePoint);
-
-    return Math.min(leftEarD, rightEarD);
-}
-
-const OPTIMAL_DISTANCE = 0.12;
 
 const Canvas: Component = () => {
 
     const [ready, setReady] = createSignal(true);
     const [currentDistance, setCurrentDistance] = createSignal(0);
     const [pretzel, setPretzelStatus] = createSignal(true);
+    const [threshold, setThreshold] = createSignal(OPTIMAL_DISTANCE);
+    const [avgDistance, setAvgDistance] = createSignal(0);
+    const [frameThreshold, setFrameThreshold] = createSignal(FRAME_THRESHOLD)
 
     let camera;
     let pose: Pose;
+    let frameCount = 0;
+    let distances: number[] = []
 
     const init = () => {
         if (!ready()) {
@@ -69,7 +72,7 @@ const Canvas: Component = () => {
 
     onMount(() => {
 
-        return; // Disable processing
+        // return; // Disable processing
 
         const videoElement = document.getElementsByClassName('input_video')[0] as HTMLVideoElement;
         const canvasElement = document.getElementsByClassName('output_canvas')[0] as HTMLCanvasElement;
@@ -81,11 +84,15 @@ const Canvas: Component = () => {
 
         const onResults: ResultsListener = (results) => {
 
+            frameCount = frameCount + 1;
+
             if (!results.poseLandmarks) {
                 // grid.updateLandmarks([]);
                 return;
             }
             init();
+
+            // console.log(results);
 
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
@@ -104,19 +111,21 @@ const Canvas: Component = () => {
 
             canvasCtx.globalCompositeOperation = 'source-over';
 
-            const referencePoint = calculateReferencePoint(
-                results.poseLandmarks[points.leftHip],
-                results.poseLandmarks[points.leftShoulder],
-                0.3
-            );
+            const referencePoint = (results?.poseLandmarks?.[points?.leftShoulder]?.visibility ?? 0) > (results?.poseLandmarks?.[points?.rightShoulder]?.visibility ?? 0) ?
+                calculateReferencePoint(
+                    results.poseLandmarks[points.leftHip],
+                    results.poseLandmarks[points.leftShoulder],
+                    NECK_EXTENSION_LENGTH
+                )
+                : calculateReferencePoint(
+                    results.poseLandmarks[points.rightHip],
+                    results.poseLandmarks[points.rightShoulder],
+                    NECK_EXTENSION_LENGTH
+                );
 
-            const distFromRef = distanceBetweenEarsAndReferencePoint(
-                results.poseLandmarks[points.leftEar],
-                results.poseLandmarks[points.rightEar],
-                referencePoint
-            );
-
-            const isPretzelPose = distFromRef > OPTIMAL_DISTANCE;
+            const distFromRef = (results?.poseLandmarks?.[points?.leftShoulder]?.visibility ?? 0) > (results?.poseLandmarks?.[points?.rightShoulder]?.visibility ?? 0)
+                ? distance(results.poseLandmarks[points.leftEar], referencePoint)
+                : distance(results.poseLandmarks[points.rightEar], referencePoint);
 
             const modifiedLandmarks = [
                 ...results.poseLandmarks,
@@ -143,8 +152,18 @@ const Canvas: Component = () => {
             // grid.updateLandmarks(results.poseWorldLandmarks);
 
 
+            distances.push(distFromRef);
+
+            if (frameCount > frameThreshold()) {
+                const isPretzelPose = mean(distances) > threshold();
+
+                setPretzelStatus(isPretzelPose)
+                setAvgDistance(mean(distances))
+                frameCount -= FRAME_THRESHOLD;
+                distances = []
+            }
+
             setCurrentDistance(distFromRef)
-            setPretzelStatus(isPretzelPose)
         }
 
         pose = new Pose({
@@ -183,25 +202,37 @@ const Canvas: Component = () => {
                 <p class="p-4 bg-green-600 text-3xl">Processing the image...</p>
             </Show>
             <div class="flex flex-col lg:flex-row">
-                <div class="sm:w-full lg:max-w-lg">
+                <div class="sm:w-full lg:max-w-3xl">
                     <Card>
-                        <div class="mb-4">
+                        <div class="mb-4 flex justify-center align-middle">
                             <Switch fallback={<Skeleton type="image" />}>
                                 <Match when={ready()}>
                                     <canvas class="output_canvas" width="640px" height="360px"></canvas>
                                 </Match>
                             </Switch>
                         </div>
-                        <Select
-                            label="Body Side"
-                            options={[
-                                { label: "Left", value: 'left' },
-                                { label: "Right", value: 'right' },
-                            ]}
-                            onChange={() => { }}
-                            value="left"
-                        />
 
+                        <div
+                            class="border-2 p-3 rounded"
+                        >
+                            <RangeInput
+                                label="Detection threshold"
+                                id="distance-threshold"
+                                onChange={value => setThreshold(value)}
+                                value={threshold()}
+                                min={0}
+                                max={0.5}
+                                step={0.01}
+                                help={"The distance limit between your ear and reference point. If above, you are considered a pretzel."}
+                            />
+                            <RangeInput
+                                label="Frame threshold"
+                                id="frame-threshold"
+                                onChange={value => setFrameThreshold(value)}
+                                value={frameThreshold()}
+                                help={"How many frame should be processed before given the verdict."}
+                            />
+                        </div>
                     </Card>
                 </div>
                 <Card>
@@ -209,12 +240,12 @@ const Canvas: Component = () => {
                         <Show when={ready()}>
                             <h1 class="mb-4 text-3xl font-extrabold text-gray-900 dark:text-white md:text-5xl lg:text-6xl">
                                 Are you a pretzel?
-                                <span class="mx-1 text-transparent bg-clip-text bg-gradient-to-r to-emerald-600 from-sky-400">
-                                    {pretzel() ? 'Yes you are.' : 'Not yet.'}
-                                </span>
-
                             </h1>
-                            <p class="text-lg font-normal font-mono text-gray-500 lg:text-xl dark:text-gray-400">Distance from reference point: {currentDistance()}</p>
+                            <span class="mb-4 text-3xl font-extrabold  md:text-5xl lg:text-6xl mx-1 text-transparent bg-clip-text bg-gradient-to-r to-emerald-600 from-sky-400">
+                                {pretzel() ? 'Yes you are.' : 'Not yet.'}
+                            </span>
+                            <p class="text-lg font-normal font-mono text-gray-500 lg:text-xl dark:text-gray-400">Considered distance from reference point: {avgDistance().toFixed(2)}</p>
+                            <p class="text-lg font-normal font-mono text-gray-500 lg:text-xl dark:text-gray-400">Real-time distance from reference point: {currentDistance().toFixed(2)}</p>
                             <Show when={pretzel()}>
                                 <img class={`${styles['pretzel-img']}`} src="https://media.newyorker.com/photos/60521c4b9274613edb14f271/1:1/w_1865,h_1865,c_limit/210329_r38112.jpg" />
                             </Show>
