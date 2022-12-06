@@ -292,17 +292,27 @@ const Canvas: Component = () => {
     })
 
     createEffect(() => {
-        if( pretzel() ) {
+        if (pretzel()) {
             createYouAreAPretzelNotification()
         }
     })
 
     return <div class="flex justify-center">
-        <div class="container sm:m-6 lg:m-16">
+        <div class="container sm:m-6 lg:mx-16 lg:my-4">
             <Show when={!ready()}>
-                <p class="p-4 bg-red-600 text-3xl">Make sure to allow the use of camera.</p>
+                <p class="p-2 bg-red-600 text-xl">Make sure to allow the use of camera.</p>
                 {/* <p class="p-4 bg-green-600 text-3xl">Processing the image...</p> */}
             </Show>
+            <div class="m-3">
+                <h2 class="flex items-center text-4xl font-extrabold dark:text-white">
+                    <span class="">
+                        Hosted on
+                    </span>
+                    <a class="mx-1 g-blue-100 text-blue-800 text-2xl font-semibold mr-2 px-2.5 py-1 rounded dark:bg-blue-200 dark:text-blue-800 ml-2" href="https://preztel-ar.vercel.app">
+                        preztel-ar.vercel.app
+                    </a>
+                </h2>
+            </div >
             <div class="flex flex-col lg:flex-row">
                 <div class="sm:w-full lg:max-w-3xl">
                     <Card>
@@ -311,25 +321,28 @@ const Canvas: Component = () => {
                         </div>
 
                         <div
-                            class="border-2 p-3 rounded"
+                            class="border-2 p-4 rounded-xl bg-gray-100 dark:border-gray-200 dark:bg-gray-900"
                         >
-                            <Switch>
-                                <Match when={!runningStatus()}>
-                                    <Button
-                                        onClick={startProgram}
-                                    >
-                                        Start
-                                    </Button>
-                                </Match>
-                                <Match when={runningStatus()}>
-                                    <Button
-                                        onClick={forceStopProgram}
-                                        variant="error"
-                                    >
-                                        Stop
-                                    </Button>
-                                </Match>
-                            </Switch>
+                            <div class="flex row">
+                                <Switch>
+                                    <Match when={!runningStatus()}>
+                                        <Button
+                                            onClick={startProgram}
+                                        >
+                                            Start
+                                        </Button>
+                                    </Match>
+                                    <Match when={runningStatus()}>
+                                        <Button
+                                            onClick={forceStopProgram}
+                                            variant="error"
+                                        >
+                                            Stop
+                                        </Button>
+                                    </Match>
+                                </Switch>
+                            </div>
+
                             <RangeInput
                                 label="Angle threshold"
                                 id="distance-threshold"
@@ -368,7 +381,7 @@ const Canvas: Component = () => {
                                 help={`The length of interval between run sequences. E.g.: Run this after ${intervalTime()} seconds for ${runningTime()}s`}
                             />
 
-                            
+
                         </div>
                     </Card>
                 </div>
