@@ -12,6 +12,7 @@ import RangeInput from "../components/RangeInput";
 import { mean } from "simple-statistics";
 import analyze from "./analyzer";
 import Button from "../components/Button";
+import createYouAreAPretzelNotification from "./notification";
 
 const points = {
     leftEar: 7,
@@ -287,6 +288,12 @@ const Canvas: Component = () => {
             } else {
                 startProgram()
             }
+        }
+    })
+
+    createEffect(() => {
+        if( pretzel() ) {
+            createYouAreAPretzelNotification()
         }
     })
 
