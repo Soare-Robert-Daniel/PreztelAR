@@ -11,7 +11,7 @@ const App: Component = () => {
   })
   
   return (
-    <div class="dark:bg-gray-800">
+    <div class={`dark:bg-gray-800 ${styles.App}`}>
       <Canvas />
     </div>
   );

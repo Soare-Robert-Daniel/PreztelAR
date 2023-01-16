@@ -12,7 +12,7 @@ const RangeInput: Component<{
 }> = (props) => {
 
     return <div class="mb-6">
-        <label for={props.id} class="block mb-1 text-lg font-mono font-medium text-gray-900 dark:text-gray-300">{`${props.label}: ${props.value}`}</label>
+        <label for={props.id} class="block mb-1 text-lg font-mono font-bold text-gray-900 dark:text-gray-200">{`${props.label}: ${props.value}`}</label>
         <input
             class="w-full h-2 bg-gray-400 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
             type="range" id={props.id} name={props.id}

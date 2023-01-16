@@ -2,7 +2,6 @@ import type { NormalizedLandmark, Pose, POSE_CONNECTIONS, ResultsListener } from
 import { Component, createEffect, createSignal, Match, onMount, Show, Switch } from "solid-js";
 import type { Camera } from '@mediapipe/camera_utils';
 import '@mediapipe/control_utils';
-import { LandmarkGrid } from '@mediapipe/control_utils_3d';
 import type { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
 import styles from './canvas.module.css';
 import { vec3 } from 'munum';
@@ -13,6 +12,7 @@ import { mean } from "simple-statistics";
 import analyze from "./analyzer";
 import Button from "../components/Button";
 import createYouAreAPretzelNotification from "./notification";
+import classNames from "classnames";
 
 const points = {
     leftEar: 7,
@@ -61,7 +61,7 @@ const Canvas: Component = () => {
 
     const [ready, setReady] = createSignal(false);
     const [currentDistance, setCurrentDistance] = createSignal(0);
-    const [pretzel, setPretzelStatus] = createSignal(true);
+    const [pretzel, setPretzelStatus] = createSignal(false);
     const [threshold, setThreshold] = createSignal(OPTIMAL_ANGLE);
     const [avgDistance, setAvgDistance] = createSignal(0);
     const [frameThreshold, setFrameThreshold] = createSignal(FRAME_THRESHOLD)
@@ -71,11 +71,12 @@ const Canvas: Component = () => {
     const [remainingTime, setRemainingTime] = createSignal(0)
     const [currentRunningTime, setCurrentRunningTime] = createSignal(0)
     const [currentWaitingTime, setCurrentWaitingTime] = createSignal(0)
+    const [hideWebcam, setHideWebcam] = createSignal(true);
 
     let camera: Camera;
     let pose: Pose;
     let frameCount = 0;
-    let distances: number[] = []
+    let anglesFromReference: number[] = []
     let interval: number | undefined;
     let forceStop = false;
 
@@ -160,23 +161,7 @@ const Canvas: Component = () => {
 
             canvasCtx.globalCompositeOperation = 'source-over';
 
-            const referencePoint = (results?.poseLandmarks?.[points?.leftShoulder]?.visibility ?? 0) > (results?.poseLandmarks?.[points?.rightShoulder]?.visibility ?? 0) ?
-                calculateReferencePoint(
-                    results.poseLandmarks[points.leftHip],
-                    results.poseLandmarks[points.leftShoulder],
-                    NECK_EXTENSION_LENGTH
-                )
-                : calculateReferencePoint(
-                    results.poseLandmarks[points.rightHip],
-                    results.poseLandmarks[points.rightShoulder],
-                    NECK_EXTENSION_LENGTH
-                );
-
-            // const distFromRef = (results?.poseLandmarks?.[points?.leftShoulder]?.visibility ?? 0) > (results?.poseLandmarks?.[points?.rightShoulder]?.visibility ?? 0)
-            //     ? distance(results.poseLandmarks[points.leftEar], referencePoint)
-            //     : distance(results.poseLandmarks[points.rightEar], referencePoint);
-
-            const distFromRef = analyze({
+            const result = analyze({
                 shoulders: [results.poseLandmarks[points.leftShoulder], results.poseLandmarks[points.rightShoulder]],
                 hips: [results.poseLandmarks[points.leftHip], results.poseLandmarks[points.rightHip]],
                 ears: [results.poseLandmarks[points.leftEar], results.poseLandmarks[points.rightEar]],
@@ -188,11 +173,11 @@ const Canvas: Component = () => {
 
             const modifiedLandmarks = [
                 ...results.poseLandmarks,
-                distFromRef.pointHipAndShoulder,
-                distFromRef.pointShoulderOnly,
-                distFromRef.shoulderMidPoint,
-                distFromRef.earsMidPoint,
-                distFromRef.normalVertex
+                result.pointHipAndShoulder,
+                result.pointShoulderOnly,
+                result.shoulderMidPoint,
+                result.earsMidPoint,
+                result.normalVertex
             ]
 
             const modifiedConnections: [number, number][] = [
@@ -236,18 +221,18 @@ const Canvas: Component = () => {
             // grid.updateLandmarks(results.poseWorldLandmarks);
 
 
-            distances.push(distFromRef.dist);
+            anglesFromReference.push(result.angle);
 
             if (frameCount > frameThreshold()) {
-                const isPretzelPose = mean(distances) > threshold();
+                const isPretzelPose = mean(anglesFromReference) > threshold();
 
                 setPretzelStatus(isPretzelPose)
-                setAvgDistance(mean(distances))
+                setAvgDistance(mean(anglesFromReference))
                 frameCount -= FRAME_THRESHOLD;
-                distances = []
+                anglesFromReference = []
             }
 
-            setCurrentDistance(distFromRef.dist)
+            setCurrentDistance(result.angle)
         }
 
         setTimeout(() => {
@@ -300,7 +285,7 @@ const Canvas: Component = () => {
     return <div class="flex justify-center">
         <div class="container sm:m-6 lg:mx-16 lg:my-4">
             <Show when={!ready()}>
-                <p class="p-2 bg-red-600 text-xl">Make sure to allow the use of camera.</p>
+                <p class="p-2 bg-red-600 text-xl rounded">Make sure to allow the use of camera.</p>
                 {/* <p class="p-4 bg-green-600 text-3xl">Processing the image...</p> */}
             </Show>
             <div class="m-3">
@@ -313,15 +298,51 @@ const Canvas: Component = () => {
                     </a>
                 </h2>
             </div >
-            <div class="flex flex-col lg:flex-row">
-                <div class="sm:w-full lg:max-w-3xl">
+            <div class="flex justify-center">
+                <div class="sm:w-full lg:max-w-5xl">
                     <Card>
-                        <div class="mb-4 flex justify-center align-middle">
-                            <canvas class="output_canvas" width="640px" height="360px"></canvas>
-                        </div>
+                        <div class="container max-h-100 flex flex-row items-center gap-4 justify-center">
+                            <div class="flex flex-col gap-2">
+                                <Show when={!ready()}>
+                                    <h1 class="mb-1 text-3xl font-extrabold text-gray-900 dark:text-white md:text-5xl lg:text-6xl">
+                                        Press 'Start' to begin.
+                                    </h1>
+                                </Show>
 
+                                <Show when={ready()}>
+                                    <h1 class="mb-4 text-3xl font-extrabold text-gray-900 dark:text-white md:text-5xl lg:text-6xl">
+                                        Are you a pretzel?
+                                    </h1>
+                                    <span class="mb-4 text-3xl font-extrabold  md:text-5xl lg:text-6xl mx-1 text-transparent bg-clip-text bg-gradient-to-r to-emerald-600 from-sky-400">
+                                        {pretzel() ? 'Yes, you are.' : 'Not yet.'}
+                                    </span>
+                                </Show>
+
+                                <br /><br />
+
+                                <p class="text-lg font-normal font-mono text-gray-500 lg:text-xl dark:text-gray-300">Considered angle:
+                                    <span class="mx-1 underline underline-offset-4">
+                                        {avgDistance().toFixed(2)}°
+                                    </span>
+                                </p>
+                                <p class="text-lg font-normal font-mono text-gray-500 lg:text-xl dark:text-gray-400">Real-time angle: {currentDistance().toFixed(2)}°</p>
+                                <p class="text-lg font-normal font-mono text-gray-500 lg:text-xl dark:text-gray-300">
+                                    {runningStatus() ? "Program ends in: " : "Program start in: "}
+                                    <span class="mx-1 underline underline-offset-4">
+                                        {currentRunningTime()}s
+                                    </span>
+                                </p>
+                            </div>
+
+                            <div>
+                                <img class={classNames(`${styles['pretzel-img']}`, { 'invisible': !pretzel() })} src="https://media.newyorker.com/photos/60521c4b9274613edb14f271/1:1/w_1865,h_1865,c_limit/210329_r38112.jpg" />
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card>
                         <div
-                            class="border-2 p-4 rounded-xl bg-gray-100 dark:border-gray-200 dark:bg-gray-900"
+                        // class="border-2 p-4 rounded-xl bg-gray-100 dark:border-gray-200 dark:bg-gray-900"
                         >
                             <div class="flex row">
                                 <Switch>
@@ -351,14 +372,14 @@ const Canvas: Component = () => {
                                 min={0}
                                 max={90}
                                 step={1}
-                                help={"The angle between your ears and reference point. If above, you are considered a pretzel."}
+                                help={"Set the threshold angle between your ears and reference point. If above, you are considered a pretzel."}
                             />
                             <RangeInput
-                                label="Frame threshold"
+                                label="Frame to analyze"
                                 id="frame-threshold"
                                 onChange={value => setFrameThreshold(value)}
                                 value={frameThreshold()}
-                                help={"How many frame should be processed before given the verdict."}
+                                help={"Set how many frame should be processed before given the verdict."}
                             />
                             <RangeInput
                                 label="Running Time (s)"
@@ -368,7 +389,7 @@ const Canvas: Component = () => {
                                 min={3}
                                 max={180}
                                 step={1}
-                                help={`How many seconds to run the pose analyzer. E.g.: Run for ${runningTime()}s`}
+                                help={`Set how many seconds to run the pose analyzer. E.g.: Run for ${runningTime()}s`}
                             />
                             <RangeInput
                                 label="Pause Interval (s)"
@@ -378,37 +399,60 @@ const Canvas: Component = () => {
                                 min={0}
                                 max={600}
                                 step={1}
-                                help={`The length of interval between run sequences. E.g.: Run this after ${intervalTime()} seconds for ${runningTime()}s`}
+                                help={`Set how much time should wait before running again (meanwhile the camera will be stopped). E.g.: Run this after ${intervalTime()} seconds for ${runningTime()}s`}
                             />
 
 
                         </div>
                     </Card>
-                </div>
-                <Show when={ready()}>
                     <Card>
-                        <div class="container max-h-100 flex flex-col items-center">
-                            <h1 class="mb-4 text-3xl font-extrabold text-gray-900 dark:text-white md:text-5xl lg:text-6xl">
-                                Are you a pretzel?
-                            </h1>
-                            <span class="mb-4 text-3xl font-extrabold  md:text-5xl lg:text-6xl mx-1 text-transparent bg-clip-text bg-gradient-to-r to-emerald-600 from-sky-400">
-                                {pretzel() ? 'Yes you are.' : 'Not yet.'}
-                            </span>
-                            <p class="text-lg font-normal font-mono text-gray-500 lg:text-xl dark:text-gray-400">Considered angle: {avgDistance().toFixed(2)}°</p>
-                            <p class="text-lg font-normal font-mono text-gray-500 lg:text-xl dark:text-gray-400">Real-time angle: {currentDistance().toFixed(2)}°</p>
-                            <p class="text-lg font-normal font-mono text-gray-500 lg:text-xl dark:text-gray-400">
-                                {runningStatus() ? "Program ends in: " : "Program start in: "}
-                                {currentRunningTime()}s
-                            </p>
+                        <h2 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Technology used:</h2>
+                        <ul class="max-w-md space-y-1 text-gray-500 list-disc list-inside dark:text-gray-400">
+                            <li>
+                                <a href="https://google.github.io/mediapipe/" target="_blank" >Pose analyze: Google MediaPipe</a>
+                            </li>
+                            <li>
+                                <a href="https://github.com/andykswong/munum" target="_blank" >3D Math Library: munum</a>
+                            </li>
+                            <li>
+                                <a href="https://simplestatistics.org" target="_blank" >Statistics Library: simple-statistics</a>
+                            </li>
+                            <li>
+                                <a href="https://www.solidjs.com" target="_blank" >Reactive Interface: SolidJS</a>
+                            </li>
+                            <li>
+                                <a href="https://tailwindcss.com" target="_blank" >CSS Utility Framework: Tailwind</a>
+                            </li>
+                            <li>
+                                <a href="https://flowbite.com/docs/typography/lists/" target="_blank" >Tailwind Framework: Flowbite</a>
+                            </li>
+                        </ul>
 
-                            <Show when={pretzel()}>
-                                <img class={`${styles['pretzel-img']}`} src="https://media.newyorker.com/photos/60521c4b9274613edb14f271/1:1/w_1865,h_1865,c_limit/210329_r38112.jpg" />
-                            </Show>
-                        </div>
                     </Card>
-                </Show>
+                </div>
             </div>
-            <video class={`input_video ${styles.webcam}`}></video>
+            <div class={`flex justify-center flex-col ${styles.webcam}`}>
+
+                <div class="flex flex-row gap-1">
+                    <div class={classNames({ 'invisible': hideWebcam() || !runningStatus() })}>
+                        <video class={`input_video`} width="480" height="270"></video>
+                    </div>
+
+                    <div class={classNames({ 'invisible': !runningStatus() })}>
+                        <canvas class="output_canvas" width="480" height="270"></canvas>
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <Show when={ready()}>
+                        <Button
+                            onClick={() => setHideWebcam(!hideWebcam())}
+                        >
+                            {hideWebcam() ? 'Show  Webcam' : 'Hide  Webcam'}
+                        </Button>
+                    </Show>
+                </div>
+            </div>
+
             <div class="landmark-grid-container"></div>
         </div>
     </div >

@@ -1,9 +1,8 @@
 .webcam {
     position: fixed;
     bottom: 30px;
-    right: 30px;
-    width: 300px;
-    visibility: hidden;
+    right: 10px;
+    width: fit-content;
 }
 
 .pretzel-img {

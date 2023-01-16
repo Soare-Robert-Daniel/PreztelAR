@@ -88,7 +88,7 @@ function analyze(data: IData) {
 
 
     return { 
-        dist: getAngleFromNormal(earsMidPoint, shoulderMidPoint, normalVertex),
+        angle: getAngleFromNormal(earsMidPoint, shoulderMidPoint, normalVertex),
         pointHipAndShoulder, 
         pointShoulderOnly,
         shoulderMidPoint,

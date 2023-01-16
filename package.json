@@ -10,6 +10,11 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@mediapipe/camera_utils": "^0.3.1640029074",
+    "@mediapipe/control_utils": "^0.6.1629159505",
+    "@mediapipe/control_utils_3d": "^0.3.1635987963",
+    "@mediapipe/drawing_utils": "^0.3.1620248257",
+    "@mediapipe/pose": "^0.5.1635988162",
     "@types/math3d": "^0.2.3",
     "autoprefixer": "^10.4.12",
     "postcss": "^8.4.18",
@@ -20,14 +25,8 @@
     "vite-plugin-solid": "^2.3.0"
   },
   "dependencies": {
-    "@mediapipe/camera_utils": "^0.3.1640029074",
-    "@mediapipe/control_utils": "^0.6.1629159505",
-    "@mediapipe/control_utils_3d": "^0.3.1635987963",
-    "@mediapipe/drawing_utils": "^0.3.1620248257",
-    "@mediapipe/pose": "^0.5.1635988162",
     "classnames": "^2.3.2",
     "flowbite": "^1.5.3",
-    "math3d": "^0.2.2",
     "munum": "^0.1.0",
     "simple-statistics": "^7.8.0",
     "solid-js": "^1.5.1"
