@@ -426,6 +426,9 @@ const Canvas: Component = () => {
                             <li>
                                 <a href="https://flowbite.com/docs/typography/lists/" target="_blank" >Tailwind Framework: Flowbite</a>
                             </li>
+                            <li>
+                                <a class="underline underline-offset-4" href="https://github.com/Soare-Robert-Daniel/PreztelAR" target="_blank" >Source code for Human and AI training.</a>
+                            </li>
                         </ul>
 
                     </Card>
