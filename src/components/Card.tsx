@@ -1,4 +1,5 @@
 import { ParentComponent } from "solid-js";
+import classNames from "classnames";
 
 const Card: ParentComponent = (props) => {
     return (

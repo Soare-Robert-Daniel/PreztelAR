@@ -326,12 +326,7 @@ const Canvas: Component = () => {
                                     </span>
                                 </p>
                                 <p class="text-lg font-normal font-mono text-gray-500 lg:text-xl dark:text-gray-400">Real-time angle: {currentDistance().toFixed(2)}°</p>
-                                <p class="text-lg font-normal font-mono text-gray-500 lg:text-xl dark:text-gray-300">
-                                    {runningStatus() ? "Program ends in: " : "Program start in: "}
-                                    <span class="mx-1 underline underline-offset-4">
-                                        {currentRunningTime()}s
-                                    </span>
-                                </p>
+                               
                             </div>
 
                             <div>
@@ -339,6 +334,19 @@ const Canvas: Component = () => {
                             </div>
                         </div>
                     </Card>
+
+                    <Show when={ready()}>
+                        <Card>
+                            <div class="container max-h-100 flex flex-row items-center gap-4 justify-center">
+                                <p class="text-xl font-normal font-mono text-gray-500 lg:text-2xl dark:text-gray-100">
+                                    {runningStatus() ? "Program ends in: " : "Program start in: "}
+                                    <span class="mx-1">
+                                        {currentRunningTime()}s
+                                    </span>
+                                </p>
+                            </div>
+                        </Card>
+                    </Show>
 
                     <Card>
                         <div
