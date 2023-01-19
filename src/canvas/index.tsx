@@ -39,7 +39,7 @@ const points = {
 }
 
 const NECK_EXTENSION_LENGTH = 0.5;
-const OPTIMAL_ANGLE = 20;
+const OPTIMAL_ANGLE = 37;
 const FRAME_THRESHOLD = 30;
 const RUNNING_TIME = 120;
 const INTERVAL_TIME = 20
@@ -348,7 +348,7 @@ const Canvas: Component = () => {
                                     </span>
                                     )
                                 </p>
-                                <p class="text-base font-normal font-mono text-gray-500 lg:text-base dark:text-gray-300">[Experimental] You can also be a pretzel if he angle between your upper body and lower body is lower than 80°:
+                                <p class="text-base font-normal font-mono text-gray-500 lg:text-base dark:text-gray-300">You can also be a pretzel if he angle between your upper body and lower body is lower than 80°:
                                     ( current angle
                                     <span class="mx-2 underline underline-offset-4">
                                         {experimentalAngle().toFixed(2)}°
