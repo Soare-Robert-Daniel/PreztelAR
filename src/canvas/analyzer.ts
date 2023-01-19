@@ -4,7 +4,8 @@ import { vec3 } from "munum";
 interface IData {
     hips: [NormalizedLandmark, NormalizedLandmark],
     shoulders: [NormalizedLandmark, NormalizedLandmark],
-    ears: [NormalizedLandmark, NormalizedLandmark]
+    ears: [NormalizedLandmark, NormalizedLandmark],
+    knee: [NormalizedLandmark, NormalizedLandmark]
     options: {
         neckExtension: number
     }
@@ -14,6 +15,7 @@ function analyze(data: IData) {
     const [leftHip, rightHip] = data.hips;
     const [leftShoulder, rightShoulder] = data.shoulders;
     const [leftEar, rightEar] = data.ears;
+    const [leftKnee, rightKnee] = data.knee;
     const { options } = data;
 
     // Utility inline functions
@@ -82,19 +84,23 @@ function analyze(data: IData) {
 
     const pointHipAndShoulder = computeReferencePointWithHipsAndShoulders();
     const pointShoulderOnly = computeReferencePointWithOnlyShoulders();
-    const shoulderMidPoint = midPoint(leftShoulder, rightShoulder)
-    const earsMidPoint = midPoint(leftEar, rightEar)
+    const shoulderMidPoint = midPoint(leftShoulder, rightShoulder);
+    const earsMidPoint = midPoint(leftEar, rightEar);
+    const hipsMidPoint = midPoint(leftHip, rightHip);
+    const kneeMidPoint = midPoint(leftKnee, rightKnee);
     const normalVertex =  translateUp(midPoint(leftShoulder, rightShoulder))
 
 
     return { 
         angle: getAngleFromNormal(earsMidPoint, shoulderMidPoint, normalVertex),
+        secondAngle: getAngleFromNormal(kneeMidPoint, hipsMidPoint, shoulderMidPoint),
         pointHipAndShoulder, 
         pointShoulderOnly,
         shoulderMidPoint,
         earsMidPoint,
         normalVertex,
-
+        hipsMidPoint,
+        kneeMidPoint
     };
 }
 

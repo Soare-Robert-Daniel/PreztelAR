@@ -24,19 +24,24 @@ const points = {
     leftHip: 23,
     rightHip: 24,
 
+    leftKnee: 25,
+    rightKnee: 26,
+
     referencePoint: 33,
     secondReferencePoint: 34,
 
     shoulderMidPoint: 35,
     earsMidPoint: 36,
 
-    normalVertex: 37
+    normalVertex: 37,
+    hipsMidPoint: 38,
+    kneeMidPoint: 39
 }
 
 const NECK_EXTENSION_LENGTH = 0.5;
 const OPTIMAL_ANGLE = 20;
 const FRAME_THRESHOLD = 30;
-const RUNNING_TIME = 60;
+const RUNNING_TIME = 120;
 const INTERVAL_TIME = 20
 
 function distance(a: NormalizedLandmark, b: NormalizedLandmark): number {
@@ -60,7 +65,8 @@ function calculateReferencePoint(hipPoint: NormalizedLandmark, shoulderPoint: No
 const Canvas: Component = () => {
 
     const [ready, setReady] = createSignal(false);
-    const [currentDistance, setCurrentDistance] = createSignal(0);
+    const [currentAngle, setCurrentAngle] = createSignal(0);
+    const [experimentalAngle, setExperimentalAngle] = createSignal(0);
     const [pretzel, setPretzelStatus] = createSignal(false);
     const [threshold, setThreshold] = createSignal(OPTIMAL_ANGLE);
     const [avgDistance, setAvgDistance] = createSignal(0);
@@ -167,8 +173,8 @@ const Canvas: Component = () => {
                 ears: [results.poseLandmarks[points.leftEar], results.poseLandmarks[points.rightEar]],
                 options: {
                     neckExtension: NECK_EXTENSION_LENGTH
-                }
-
+                },
+                knee: [results.poseLandmarks[points.leftKnee], results.poseLandmarks[points.rightKnee]],
             });
 
             const modifiedLandmarks = [
@@ -177,7 +183,9 @@ const Canvas: Component = () => {
                 result.pointShoulderOnly,
                 result.shoulderMidPoint,
                 result.earsMidPoint,
-                result.normalVertex
+                result.normalVertex,
+                result.hipsMidPoint,
+                result.kneeMidPoint
             ]
 
             const modifiedConnections: [number, number][] = [
@@ -195,13 +203,19 @@ const Canvas: Component = () => {
                 [points.earsMidPoint, points.shoulderMidPoint],
                 [points.earsMidPoint, points.leftEar],
                 [points.earsMidPoint, points.rightEar],
-                [points.shoulderMidPoint, points.normalVertex]
+                [points.shoulderMidPoint, points.normalVertex],
+                [points.leftHip, points.hipsMidPoint],
+                [points.rightHip, points.hipsMidPoint],
+                [points.hipsMidPoint, points.shoulderMidPoint],
+                [points.hipsMidPoint, points.kneeMidPoint],
                 // [points.leftShoulder, points.referencePoint], [points.rightShoulder, points.
             ]
 
             const pointsToDraw = [
                 results.poseLandmarks[points.leftShoulder], results.poseLandmarks[points.rightShoulder],
-                results.poseLandmarks[points.leftEar], results.poseLandmarks[points.rightEar]
+                results.poseLandmarks[points.leftEar], results.poseLandmarks[points.rightEar],
+                results.poseLandmarks[points.leftHip], results.poseLandmarks[points.rightHip],
+                results.poseLandmarks[points.leftKnee], results.poseLandmarks[points.rightKnee]
             ]
 
 
@@ -224,7 +238,7 @@ const Canvas: Component = () => {
             anglesFromReference.push(result.angle);
 
             if (frameCount > frameThreshold()) {
-                const isPretzelPose = mean(anglesFromReference) > threshold();
+                const isPretzelPose = mean(anglesFromReference) > threshold() || result.secondAngle < 70;
 
                 setPretzelStatus(isPretzelPose)
                 setAvgDistance(mean(anglesFromReference))
@@ -232,7 +246,8 @@ const Canvas: Component = () => {
                 anglesFromReference = []
             }
 
-            setCurrentDistance(result.angle)
+            setCurrentAngle(result.angle)
+            setExperimentalAngle(result.secondAngle)
         }
 
         setTimeout(() => {
@@ -320,13 +335,28 @@ const Canvas: Component = () => {
 
                                 <br /><br />
 
-                                <p class="text-lg font-normal font-mono text-gray-500 lg:text-xl dark:text-gray-300">Considered angle:
-                                    <span class="mx-1 underline underline-offset-4">
+                                <p class="text-lg font-normal font-mono text-gray-500 lg:text-xl dark:text-gray-300">You are a pretzel if the angle between your ears and shoulders is above:
+                                    <span class="mx-1">
+                                        {
+                                            threshold()
+                                        }°
+                                    </span>
+
+                                    ( current angle
+                                    <span class="mx-2 underline underline-offset-4">
                                         {avgDistance().toFixed(2)}°
                                     </span>
+                                    )
                                 </p>
-                                <p class="text-lg font-normal font-mono text-gray-500 lg:text-xl dark:text-gray-400">Real-time angle: {currentDistance().toFixed(2)}°</p>
-                               
+                                <p class="text-base font-normal font-mono text-gray-500 lg:text-base dark:text-gray-300">[Experimental] You can also be a pretzel if he angle between your upper body and lower body is lower than 80°:
+                                    ( current angle
+                                    <span class="mx-2 underline underline-offset-4">
+                                        {experimentalAngle().toFixed(2)}°
+                                    </span>
+                                    )
+                                </p>
+                                {/* <p class="text-lg font-normal font-mono text-gray-500 lg:text-xl dark:text-gray-400">Real-time angle (Ears, Shoulders, Reference): {currentAngle().toFixed(2)}°</p>
+                                <p class="text-base font-normal font-mono text-gray-500 lg:text-base dark:text-gray-400">Real-time angle (Shoulder, Hips, Knees): {experimentalAngle().toFixed(2)}°</p> */}
                             </div>
 
                             <div>
@@ -373,14 +403,14 @@ const Canvas: Component = () => {
                             </div>
 
                             <RangeInput
-                                label="Angle threshold"
+                                label="Ears Shoulder Angle threshold"
                                 id="distance-threshold"
                                 onChange={value => setThreshold(value)}
                                 value={threshold()}
                                 min={0}
                                 max={90}
                                 step={1}
-                                help={"Set the threshold angle between your ears and reference point. If above, you are considered a pretzel."}
+                                help={"Set the threshold angle between your ears and reference point (the straight line that from the base of the neck). If above, you are considered a pretzel."}
                             />
                             <RangeInput
                                 label="Frame to analyze"
