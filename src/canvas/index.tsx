@@ -308,7 +308,7 @@ const Canvas: Component = () => {
                     <span class="">
                         Hosted on
                     </span>
-                    <a class="mx-1 g-blue-100 text-blue-800 text-2xl font-semibold mr-2 px-2.5 py-1 rounded dark:bg-blue-200 dark:text-blue-800 ml-2" href="https://preztel-ar.vercel.app">
+                    <a class="mx-1 g-blue-100 text-blue-800 text-2xl font-semibold mr-2 px-2.5 py-1 rounded bg-blue-200 dark:text-blue-800 ml-2" href="https://preztel-ar.vercel.app">
                         preztel-ar.vercel.app
                     </a>
                 </h2>
@@ -343,14 +343,14 @@ const Canvas: Component = () => {
                                     </span>
 
                                     ( current angle
-                                    <span class="mx-2 underline underline-offset-4">
+                                    <span class="mx-2 p-1 rounded text-white bg-green-500">
                                         {avgDistance().toFixed(2)}°
                                     </span>
                                     )
                                 </p>
                                 <p class="text-base font-normal font-mono text-gray-500 lg:text-base dark:text-gray-300">You can also be a pretzel if he angle between your upper body and lower body is lower than 80°:
                                     ( current angle
-                                    <span class="mx-2 underline underline-offset-4">
+                                    <span class="mx-2 text-white p-1 bg-blue-500 rounded">
                                         {experimentalAngle().toFixed(2)}°
                                     </span>
                                     )
@@ -444,31 +444,35 @@ const Canvas: Component = () => {
                         </div>
                     </Card>
                     <Card>
-                        <h2 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Technology used:</h2>
-                        <ul class="max-w-md space-y-1 text-gray-500 list-disc list-inside dark:text-gray-400">
-                            <li>
-                                <a href="https://google.github.io/mediapipe/" target="_blank" >Pose analyze: Google MediaPipe</a>
-                            </li>
-                            <li>
-                                <a href="https://github.com/andykswong/munum" target="_blank" >3D Math Library: munum</a>
-                            </li>
-                            <li>
-                                <a href="https://simplestatistics.org" target="_blank" >Statistics Library: simple-statistics</a>
-                            </li>
-                            <li>
-                                <a href="https://www.solidjs.com" target="_blank" >Reactive Interface: SolidJS</a>
-                            </li>
-                            <li>
-                                <a href="https://tailwindcss.com" target="_blank" >CSS Utility Framework: Tailwind</a>
-                            </li>
-                            <li>
-                                <a href="https://flowbite.com/docs/typography/lists/" target="_blank" >Tailwind Framework: Flowbite</a>
-                            </li>
-                            <li>
-                                <a class="underline underline-offset-4" href="https://github.com/Soare-Robert-Daniel/PreztelAR" target="_blank" >Source code for Human and AI training.</a>
-                            </li>
-                        </ul>
-
+                        <div class="flex flex-row justify-between p-2">
+                            <div>
+                                <h2 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Technology used:</h2>
+                                <ul class="max-w-md space-y-1 text-gray-500 list-disc list-inside dark:text-gray-400">
+                                    <li>
+                                        <a href="https://google.github.io/mediapipe/" target="_blank" >Pose analyze: Google MediaPipe</a>
+                                    </li>
+                                    <li>
+                                        <a href="https://github.com/andykswong/munum" target="_blank" >3D Math Library: munum</a>
+                                    </li>
+                                    <li>
+                                        <a href="https://simplestatistics.org" target="_blank" >Statistics Library: simple-statistics</a>
+                                    </li>
+                                    <li>
+                                        <a href="https://www.solidjs.com" target="_blank" >Reactive Interface: SolidJS</a>
+                                    </li>
+                                    <li>
+                                        <a href="https://tailwindcss.com" target="_blank" >CSS Utility Framework: Tailwind</a>
+                                    </li>
+                                    <li>
+                                        <a href="https://flowbite.com/docs/typography/lists/" target="_blank" >Tailwind Framework: Flowbite</a>
+                                    </li>
+                                    <li>
+                                        <a class="underline underline-offset-4" href="https://github.com/Soare-Robert-Daniel/PreztelAR" target="_blank" >Source code for Human and AI training.</a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <img src="./src/assets/frame.png" style={{ height: '250px'}}/>
+                        </div>
                     </Card>
                 </div>
             </div>
